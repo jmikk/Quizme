@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home | OpenQuizlet</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-content">
+            <a href="index.html" class="nav-brand">OpenQuizlet</a>
+            <div class="nav-links">
+                <!-- Links could go here -->
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="hero-content">
+            <h1 class="hero-title">Master your subjects.</h1>
+            <p class="hero-sub">The simple, open-source way to study flashcards and quiz yourself.</p>
+        </div>
+    </div>
+
+    <!-- Main Library Section -->
+    <div class="library-container">
+        <h3 class="section-title">Your Study Sets</h3>
+        
+        <div class="deck-grid">
+            
+            <!-- Dynamic Set Card -->
+            <a href="study.html" class="deck-card">
+                <div>
+                    <div class="deck-title">Main Study Set</div>
+                    <div class="deck-stats" id="term-count">Loading terms...</div>
+                </div>
+                <div class="deck-author">
+                    <div class="author-avatar"></div>
+                    <span>You</span>
+                </div>
+            </a>
+
+            <!-- Placeholder Card (to show how it looks with multiple) -->
+            <div class="deck-card" style="opacity: 0.6; cursor: default;">
+                <div>
+                    <div class="deck-title">New Set</div>
+                    <div class="deck-stats">Coming Soon</div>
+                </div>
+                <div class="deck-author">
+                    <div style="background: #ccc;" class="author-avatar"></div>
+                    <span>System</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Simple script to count words in the JSON file
+        fetch('words.json')
+            .then(response => response.json())
+            .then(data => {
+                const count = data.length;
+                document.getElementById('term-count').textContent = `${count} Terms`;
+            })
+            .catch(err => {
+                document.getElementById('term-count').textContent = "Unknown Terms";
+            });
+    </script>
+</body>
+</html>
