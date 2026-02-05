@@ -1,90 +1,78 @@
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: #f0f2f5;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
     margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+}
+
+/* Navigation */
+nav {
+    width: 100%;
+    background-color: white;
+    padding: 15px 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.nav-brand { font-weight: bold; font-size: 1.2rem; color: #4255ff; }
+.nav-links button {
+    background: none;
+    color: #555;
+    margin: 0 10px;
+    padding: 5px 10px;
+}
+.nav-links button.active-mode {
+    background-color: #eef1ff;
+    color: #4255ff;
 }
 
 .container {
-    text-align: center;
     width: 90%;
     max-width: 600px;
+    text-align: center;
 }
 
-/* The 3D Scene */
-.scene {
-    width: 100%;
-    height: 300px;
-    perspective: 1000px; /* Essential for 3D effect */
-    cursor: pointer;
-    margin: 20px 0;
-}
+.hidden { display: none !important; }
 
-/* The Card Object */
-.card {
-    width: 100%;
-    height: 100%;
-    position: relative;
-    transition: transform 0.6s;
-    transform-style: preserve-3d;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    border-radius: 15px;
-}
+/* Existing Flashcard Styles (Keep these) */
+.scene { width: 100%; height: 300px; perspective: 1000px; cursor: pointer; margin: 20px 0; }
+.card { width: 100%; height: 100%; position: relative; transition: transform 0.6s; transform-style: preserve-3d; box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-radius: 15px; }
+.card.is-flipped { transform: rotateY(180deg); }
+.card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; padding: 20px; box-sizing: border-box; border-radius: 15px; background-color: white; }
+.card-back { background-color: #2e3856; color: white; transform: rotateY(180deg); }
 
-/* The Flip Class - added via JS */
-.card.is-flipped {
-    transform: rotateY(180deg);
-}
+/* Control Buttons */
+button { padding: 10px 20px; border: none; border-radius: 5px; background-color: #4255ff; color: white; font-weight: bold; cursor: pointer; transition: 0.2s; }
+button:hover { background-color: #303ecc; }
+.controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+#shuffle-btn { background-color: #ffcd1f; color: #333; }
 
-/* Common Face Styles */
-.card-face {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    backface-visibility: hidden; /* Hides the back when facing away */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 2rem;
-    padding: 20px;
-    box-sizing: border-box;
-    border-radius: 15px;
-    background-color: white;
-}
+/* QUIZ STYLES */
+#quiz-setup { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+.option-group { margin-bottom: 20px; text-align: left; }
+.option-group label { display: block; font-weight: bold; margin-bottom: 5px; }
+.checkbox-group label { display: block; font-weight: normal; margin: 5px 0; }
+select, input[type="number"] { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; }
+.start-btn { width: 100%; font-size: 1.1rem; padding: 15px; }
 
-/* Back Face Specifics */
-.card-back {
-    background-color: #2e3856; /* Quizlet-like dark blue */
-    color: white;
-    transform: rotateY(180deg);
-}
+/* Question Styles */
+.question-card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: left; }
+.q-prompt { font-size: 1.2rem; font-weight: bold; margin-bottom: 20px; display: block; }
+.mc-option { display: block; width: 100%; padding: 12px; margin: 8px 0; background: #f0f2f5; border: 2px solid transparent; border-radius: 8px; cursor: pointer; text-align: left; }
+.mc-option:hover { border-color: #4255ff; background: #eef1ff; }
+.mc-option.correct { background-color: #d1fae5; border-color: #10b981; color: #065f46; }
+.mc-option.wrong { background-color: #fee2e2; border-color: #ef4444; color: #991b1b; }
 
-/* Button Styling */
-.controls {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-}
+.writing-input { width: 100%; padding: 12px; font-size: 1rem; margin-bottom: 10px; border: 2px solid #ddd; border-radius: 5px; box-sizing: border-box;}
 
-button {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 5px;
-    background-color: #4255ff;
-    color: white;
-    font-weight: bold;
-    cursor: pointer;
-}
+#feedback { margin-top: 15px; padding: 10px; border-radius: 5px; font-weight: bold; }
+.feedback-correct { background-color: #d1fae5; color: #065f46; }
+.feedback-wrong { background-color: #fee2e2; color: #991b1b; }
 
-button:hover {
-    background-color: #303ecc;
-}
-
-#shuffle-btn {
-    background-color: #ffcd1f;
-    color: #333;
-}
+.score-circle { width: 120px; height: 120px; background: #4255ff; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold; margin: 20px auto; }
