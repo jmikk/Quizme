@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Flashcards</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="container">
+        <h1>Study Time</h1>
+        
+        <div class="scene">
+            <div class="card" id="flashcard">
+                <div class="card-face card-front">
+                    <p id="term-text">Loading...</p>
+                </div>
+                <div class="card-face card-back">
+                    <p id="def-text">...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="prev-btn">← Previous</button>
+            <span id="counter">1 / X</span>
+            <button id="next-btn">Next →</button>
+        </div>
+        <button id="shuffle-btn">Shuffle Deck</button>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
