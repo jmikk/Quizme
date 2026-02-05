@@ -1,11 +1,8 @@
 let deck = [];
-// Flashcard State
 let currentCardIndex = 0;
-// Quiz State
 let quizQuestions = [];
 let currentQuizIndex = 0;
 let score = 0;
-let quizSettings = {};
 
 // DOM Elements
 const flashcard = document.getElementById('flashcard');
@@ -15,6 +12,7 @@ const counter = document.getElementById('counter');
 const qContainer = document.getElementById('question-container');
 const feedbackDiv = document.getElementById('feedback');
 const nextQBtn = document.getElementById('next-question-btn');
+const progressBar = document.getElementById('quiz-progress-bar');
 
 // --- INITIALIZATION ---
 async function loadDeck() {
@@ -22,19 +20,20 @@ async function loadDeck() {
         const response = await fetch('words.json');
         deck = await response.json();
         
-        // Update max questions count in setup
+        // Setup Max Limits
         document.getElementById('q-count').max = deck.length;
-        document.getElementById('max-q-note').textContent = `(Max: ${deck.length})`;
+        document.getElementById('max-q-note').textContent = `(Max available: ${deck.length})`;
         document.getElementById('q-count').value = Math.min(5, deck.length);
         
-        updateCard(); // Load first flashcard
+        updateCard(); 
     } catch (error) {
         console.error('Error loading deck:', error);
-        termText.textContent = "Error loading words.";
+        termText.textContent = "Error loading words.json";
+        defText.textContent = "Please ensure words.json exists.";
     }
 }
 
-// --- NAVIGATION TABS ---
+// --- NAVIGATION ---
 function switchMode(mode) {
     document.querySelectorAll('.mode-section').forEach(el => el.classList.add('hidden'));
     document.querySelectorAll('.nav-links button').forEach(el => el.classList.remove('active-mode'));
@@ -48,16 +47,18 @@ function switchMode(mode) {
     }
 }
 
-// --- FLASHCARD LOGIC (Existing) ---
+// --- FLASHCARDS ---
 function updateCard() {
     if(deck.length === 0) return;
     const cardData = deck[currentCardIndex];
     flashcard.classList.remove('is-flipped');
+    
+    // Wait for flip back
     setTimeout(() => {
         termText.textContent = cardData.term;
         defText.textContent = cardData.definition;
         counter.textContent = `${currentCardIndex + 1} / ${deck.length}`;
-    }, 150);
+    }, 200);
 }
 
 flashcard.addEventListener('click', () => flashcard.classList.toggle('is-flipped'));
@@ -75,44 +76,38 @@ document.getElementById('shuffle-btn').addEventListener('click', () => {
 });
 
 // --- QUIZ LOGIC ---
-
 function startQuiz() {
-    // 1. Get Settings
     const qCount = parseInt(document.getElementById('q-count').value);
-    const answerWith = document.getElementById('answer-with').value; // 'term', 'def', 'mixed'
-    const types = Array.from(document.querySelectorAll('.checkbox-group input:checked')).map(cb => cb.value);
+    const answerWith = document.getElementById('answer-with').value;
+    const types = Array.from(document.querySelectorAll('.checkbox-grid input:checked')).map(cb => cb.value);
 
     if (types.length === 0) { alert("Please select at least one question type."); return; }
 
-    // 2. Prepare Question Pool
-    // Shuffle deck and slice to qCount
+    // Generate Pool
     let pool = [...deck].sort(() => Math.random() - 0.5).slice(0, qCount);
     
     quizQuestions = pool.map(item => {
-        // Determine question type randomly from selected types
         const type = types[Math.floor(Math.random() * types.length)];
-        
-        // Determine Question/Answer direction
         let mode = answerWith;
         if (mode === 'mixed') mode = Math.random() > 0.5 ? 'term' : 'def';
-
-        const questionText = mode === 'def' ? item.term : item.definition;
-        const correctAnswer = mode === 'def' ? item.definition : item.term;
         
         return {
             type: type,
-            question: questionText,
-            correct: correctAnswer,
+            question: mode === 'def' ? item.term : item.definition,
+            correct: mode === 'def' ? item.definition : item.term,
             originalItem: item,
-            mode: mode // 'term' means user must provide term, 'def' means user must provide definition
+            mode: mode
         };
     });
 
-    // 3. Reset State
     currentQuizIndex = 0;
     score = 0;
+    
+    // UI Transitions
     document.getElementById('quiz-setup').classList.add('hidden');
     document.getElementById('quiz-active').classList.remove('hidden');
+    document.getElementById('quiz-results').classList.add('hidden');
+    
     showNextQuestion();
 }
 
@@ -123,39 +118,55 @@ function showNextQuestion() {
     }
 
     const qData = quizQuestions[currentQuizIndex];
-    document.getElementById('quiz-progress').textContent = `Question ${currentQuizIndex + 1}/${quizQuestions.length}`;
+    
+    // Update Header
+    document.getElementById('quiz-progress-text').textContent = `Question ${currentQuizIndex + 1} of ${quizQuestions.length}`;
     document.getElementById('quiz-score').textContent = `Score: ${score}`;
     
-    // Clear previous
+    // Update Progress Bar
+    const progressPercent = ((currentQuizIndex) / quizQuestions.length) * 100;
+    progressBar.style.width = `${progressPercent}%`;
+
+    // Clear Previous
     qContainer.innerHTML = '';
     feedbackDiv.classList.add('hidden');
     feedbackDiv.className = ''; 
     nextQBtn.classList.add('hidden');
 
-    // Render based on type
+    // Create Question Card
     const card = document.createElement('div');
     card.className = 'question-card';
     
-    const prompt = document.createElement('span');
-    prompt.className = 'q-prompt';
-    prompt.textContent = qData.question;
-    card.appendChild(prompt);
+    const label = document.createElement('div');
+    label.className = 'q-label';
+    label.textContent = qData.mode === 'term' ? 'Definition' : 'Term';
+    card.appendChild(label);
 
+    const text = document.createElement('div');
+    text.className = 'q-text';
+    text.textContent = qData.question;
+    card.appendChild(text);
+
+    const optionsContainer = document.createElement('div');
+    
     if (qData.type === 'multiple') {
-        renderMultipleChoice(qData, card);
+        optionsContainer.className = 'options-grid';
+        renderMultipleChoice(qData, optionsContainer);
     } else if (qData.type === 'tf') {
-        renderTrueFalse(qData, card);
+        optionsContainer.className = 'tf-container';
+        optionsContainer.style.display = 'flex';
+        optionsContainer.style.gap = '1rem';
+        renderTrueFalse(qData, optionsContainer);
     } else if (qData.type === 'writing') {
-        renderWriting(qData, card);
+        renderWriting(qData, optionsContainer);
     }
 
+    card.appendChild(optionsContainer);
     qContainer.appendChild(card);
 }
 
-// -- Generators --
-
 function renderMultipleChoice(qData, container) {
-    // Get distractors
+    // Distractors
     const distractors = deck
         .filter(item => item !== qData.originalItem)
         .sort(() => Math.random() - 0.5)
@@ -166,7 +177,7 @@ function renderMultipleChoice(qData, container) {
 
     options.forEach(opt => {
         const btn = document.createElement('button');
-        btn.className = 'mc-option';
+        btn.className = 'option-card';
         btn.textContent = opt;
         btn.onclick = () => checkAnswer(opt, qData.correct, btn);
         container.appendChild(btn);
@@ -174,38 +185,32 @@ function renderMultipleChoice(qData, container) {
 }
 
 function renderTrueFalse(qData, container) {
-    // 50% chance of being true
     const isTrue = Math.random() > 0.5;
     let displayAnswer = qData.correct;
     
     if (!isTrue) {
-        // Find a wrong answer
         const randomWrong = deck.filter(i => i !== qData.originalItem)[0];
         if (randomWrong) {
             displayAnswer = qData.mode === 'def' ? randomWrong.definition : randomWrong.term;
         }
     }
 
-    const displayText = document.createElement('p');
-    displayText.style.fontStyle = "italic";
-    displayText.textContent = `Is this the correct answer?\n\n"${displayAnswer}"`;
-    container.appendChild(displayText);
+    // Append context to question text
+    const qText = container.previousSibling; 
+    qText.innerHTML += `<br><div style="font-size:1rem; margin-top:1.5rem; color:#586380; font-weight:normal;">Is this the correct answer?</div><div style="margin-top:0.5rem; color:var(--text-primary); font-weight:bold;">"${displayAnswer}"</div>`;
 
     const btnTrue = document.createElement('button');
+    btnTrue.className = 'option-card'; // Reuse option styling
+    btnTrue.style.flex = '1';
+    btnTrue.style.textAlign = 'center';
     btnTrue.textContent = "True";
-    btnTrue.style.marginRight = "10px";
-    btnTrue.onclick = () => checkAnswer(isTrue ? "True" : "False", "True", btnTrue); // Logic: User says True, if isTrue is true, correct.
+    btnTrue.onclick = () => checkAnswer("True", isTrue ? "True" : "False", btnTrue);
 
     const btnFalse = document.createElement('button');
+    btnFalse.className = 'option-card';
+    btnFalse.style.flex = '1';
+    btnFalse.style.textAlign = 'center';
     btnFalse.textContent = "False";
-    btnFalse.onclick = () => checkAnswer(isTrue ? "False" : "True", "True", btnFalse); 
-
-    // Helper logic for TF: checkAnswer expects (userChoice, correctValue). 
-    // If isTrue is true, correct answer is "True". 
-    // If isTrue is false, correct answer is "False".
-    
-    // Re-bind clickers for clarity:
-    btnTrue.onclick = () => checkAnswer("True", isTrue ? "True" : "False", btnTrue);
     btnFalse.onclick = () => checkAnswer("False", isTrue ? "True" : "False", btnFalse);
 
     container.appendChild(btnTrue);
@@ -216,32 +221,29 @@ function renderWriting(qData, container) {
     const input = document.createElement('input');
     input.type = 'text';
     input.className = 'writing-input';
-    input.placeholder = 'Type your answer...';
+    input.placeholder = 'Type the answer...';
+    input.autocomplete = "off";
     
     const submitBtn = document.createElement('button');
-    submitBtn.textContent = 'Submit';
+    submitBtn.className = 'action-btn';
+    submitBtn.textContent = 'Submit Answer';
+    submitBtn.style.width = 'auto';
     submitBtn.onclick = () => checkAnswer(input.value, qData.correct, input);
 
-    // Allow Enter key
-    input.addEventListener("keypress", function(event) {
-        if (event.key === "Enter") {
-            submitBtn.click();
-        }
+    input.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") submitBtn.click();
     });
 
     container.appendChild(input);
     container.appendChild(submitBtn);
 }
 
-// -- Grading --
-
 function checkAnswer(userAnswer, correctAnswer, element) {
-    // Disable all buttons in container
+    // Disable inputs
     const buttons = qContainer.querySelectorAll('button');
     buttons.forEach(b => b.disabled = true);
     if(element.tagName === 'INPUT') element.disabled = true;
 
-    // Normalize for Writing (ignore case/spacing)
     const cleanUser = userAnswer.toString().trim().toLowerCase();
     const cleanCorrect = correctAnswer.toString().trim().toLowerCase();
     
@@ -249,33 +251,40 @@ function checkAnswer(userAnswer, correctAnswer, element) {
 
     if (isCorrect) {
         score++;
-        feedbackDiv.textContent = "Correct!";
+        feedbackDiv.textContent = "Correct! Nicely done.";
         feedbackDiv.className = 'feedback-correct';
-        if(element.className.includes('mc-option')) element.classList.add('correct');
+        if(element.classList.contains('option-card')) {
+            element.classList.add('correct');
+            element.style.borderColor = 'var(--success-green)';
+        }
     } else {
-        feedbackDiv.innerHTML = `Incorrect.<br>Correct answer: <strong>${correctAnswer}</strong>`;
+        feedbackDiv.innerHTML = `Incorrect.<br>The correct answer was: <strong>${correctAnswer}</strong>`;
         feedbackDiv.className = 'feedback-wrong';
-        if(element.className.includes('mc-option')) element.classList.add('wrong');
+        if(element.classList.contains('option-card')) {
+            element.classList.add('wrong');
+        }
         
-        // If MC, highlight the correct one
-        if(element.className.includes('mc-option') || element.className.includes('tf')) {
-             const allOpts = qContainer.querySelectorAll('.mc-option');
+        // Find and highlight correct answer
+        if(element.classList.contains('option-card')) {
+             const allOpts = qContainer.querySelectorAll('.option-card');
              allOpts.forEach(opt => {
-                 if(opt.textContent === correctAnswer) opt.classList.add('correct');
+                 if(opt.textContent === correctAnswer) {
+                     opt.classList.add('correct');
+                     opt.style.borderColor = 'var(--success-green)';
+                 }
              });
         }
     }
 
     feedbackDiv.classList.remove('hidden');
     nextQBtn.classList.remove('hidden');
+    
+    // Auto focus next button for keyboard users
+    nextQBtn.focus();
 }
 
-nextQBtn.addEventListener('click', () => {
-    currentQuizIndex++;
-    showNextQuestion();
-});
-
 function endQuiz() {
+    progressBar.style.width = '100%';
     document.getElementById('quiz-active').classList.add('hidden');
     document.getElementById('quiz-results').classList.remove('hidden');
     
@@ -283,10 +292,25 @@ function endQuiz() {
     document.getElementById('final-score').textContent = `${percentage}%`;
     
     const finalText = document.getElementById('final-text');
-    if (percentage === 100) finalText.textContent = "Perfect score! You're a master.";
-    else if (percentage >= 70) finalText.textContent = "Great job! Keep practicing.";
-    else finalText.textContent = "Keep studying, you'll get there!";
+    const circle = document.querySelector('.score-circle');
+    
+    if (percentage === 100) {
+        finalText.textContent = "Perfect score! You're a master.";
+        circle.style.borderColor = "var(--success-green)";
+        circle.style.color = "var(--success-green)";
+    } else if (percentage >= 70) {
+        finalText.textContent = "Great job! You're doing well.";
+        circle.style.borderColor = "var(--primary-blue)";
+        circle.style.color = "var(--primary-blue)";
+    } else {
+        finalText.textContent = "Keep studying! You'll get there.";
+        circle.style.borderColor = "var(--accent-yellow)";
+        circle.style.color = "var(--text-primary)";
+    }
 }
 
-// Initialize
+// Start
 loadDeck();
+// Expose functions globally for HTML onclicks
+window.switchMode = switchMode;
+window.startQuiz = startQuiz;
