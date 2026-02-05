@@ -18,18 +18,25 @@ const progressBar = document.getElementById('quiz-progress-bar');
 async function loadDeck() {
     try {
         const response = await fetch('words.json');
+        if (!response.ok) throw new Error("JSON file not found");
+        
         deck = await response.json();
         
         // Setup Max Limits
-        document.getElementById('q-count').max = deck.length;
-        document.getElementById('max-q-note').textContent = `(Max available: ${deck.length})`;
-        document.getElementById('q-count').value = Math.min(5, deck.length);
+        const qCountInput = document.getElementById('q-count');
+        if (qCountInput) {
+            qCountInput.max = deck.length;
+            qCountInput.value = Math.min(5, deck.length);
+        }
         
+        const maxNote = document.getElementById('max-q-note');
+        if (maxNote) maxNote.textContent = `(Max available: ${deck.length})`;
+
         updateCard(); 
     } catch (error) {
         console.error('Error loading deck:', error);
-        termText.textContent = "Error loading words.json";
-        defText.textContent = "Please ensure words.json exists.";
+        if (termText) termText.textContent = "Error loading words.json";
+        if (defText) defText.textContent = "Please ensure words.json exists and is valid JSON.";
     }
 }
 
@@ -51,25 +58,30 @@ function switchMode(mode) {
 function updateCard() {
     if(deck.length === 0) return;
     const cardData = deck[currentCardIndex];
-    flashcard.classList.remove('is-flipped');
+    if (flashcard) flashcard.classList.remove('is-flipped');
     
     // Wait for flip back
     setTimeout(() => {
-        termText.textContent = cardData.term;
-        defText.textContent = cardData.definition;
-        counter.textContent = `${currentCardIndex + 1} / ${deck.length}`;
+        if (termText) termText.textContent = cardData.term;
+        if (defText) defText.textContent = cardData.definition;
+        if (counter) counter.textContent = `${currentCardIndex + 1} / ${deck.length}`;
     }, 200);
 }
 
-flashcard.addEventListener('click', () => flashcard.classList.toggle('is-flipped'));
+if (flashcard) flashcard.addEventListener('click', () => flashcard.classList.toggle('is-flipped'));
 
-document.getElementById('next-btn').addEventListener('click', () => {
+const nextBtn = document.getElementById('next-btn');
+if (nextBtn) nextBtn.addEventListener('click', () => {
     if (currentCardIndex < deck.length - 1) { currentCardIndex++; updateCard(); }
 });
-document.getElementById('prev-btn').addEventListener('click', () => {
+
+const prevBtn = document.getElementById('prev-btn');
+if (prevBtn) prevBtn.addEventListener('click', () => {
     if (currentCardIndex > 0) { currentCardIndex--; updateCard(); }
 });
-document.getElementById('shuffle-btn').addEventListener('click', () => {
+
+const shuffleBtn = document.getElementById('shuffle-btn');
+if (shuffleBtn) shuffleBtn.addEventListener('click', () => {
     deck.sort(() => Math.random() - 0.5);
     currentCardIndex = 0;
     updateCard();
@@ -77,8 +89,18 @@ document.getElementById('shuffle-btn').addEventListener('click', () => {
 
 // --- QUIZ LOGIC ---
 function startQuiz() {
-    const qCount = parseInt(document.getElementById('q-count').value);
-    const answerWith = document.getElementById('answer-with').value;
+    if (deck.length === 0) {
+        alert("No words loaded. Please check words.json");
+        return;
+    }
+
+    const qCountInput = document.getElementById('q-count');
+    // Default to 5 if input is invalid
+    const qCount = qCountInput ? (parseInt(qCountInput.value) || 5) : 5;
+    
+    const answerWithSelect = document.getElementById('answer-with');
+    const answerWith = answerWithSelect ? answerWithSelect.value : 'mixed';
+    
     const types = Array.from(document.querySelectorAll('.checkbox-grid input:checked')).map(cb => cb.value);
 
     if (types.length === 0) { alert("Please select at least one question type."); return; }
@@ -125,7 +147,7 @@ function showNextQuestion() {
     
     // Update Progress Bar
     const progressPercent = ((currentQuizIndex) / quizQuestions.length) * 100;
-    progressBar.style.width = `${progressPercent}%`;
+    if (progressBar) progressBar.style.width = `${progressPercent}%`;
 
     // Clear Previous
     qContainer.innerHTML = '';
@@ -156,7 +178,8 @@ function showNextQuestion() {
         optionsContainer.className = 'tf-container';
         optionsContainer.style.display = 'flex';
         optionsContainer.style.gap = '1rem';
-        renderTrueFalse(qData, optionsContainer);
+        // Pass the text element explicitly to avoid sibling errors
+        renderTrueFalse(qData, optionsContainer, text);
     } else if (qData.type === 'writing') {
         renderWriting(qData, optionsContainer);
     }
@@ -184,7 +207,7 @@ function renderMultipleChoice(qData, container) {
     });
 }
 
-function renderTrueFalse(qData, container) {
+function renderTrueFalse(qData, container, textElement) {
     const isTrue = Math.random() > 0.5;
     let displayAnswer = qData.correct;
     
@@ -195,12 +218,13 @@ function renderTrueFalse(qData, container) {
         }
     }
 
-    // Append context to question text
-    const qText = container.previousSibling; 
-    qText.innerHTML += `<br><div style="font-size:1rem; margin-top:1.5rem; color:#586380; font-weight:normal;">Is this the correct answer?</div><div style="margin-top:0.5rem; color:var(--text-primary); font-weight:bold;">"${displayAnswer}"</div>`;
+    // Append context to question text using the passed element
+    if (textElement) {
+        textElement.innerHTML += `<br><div style="font-size:1rem; margin-top:1.5rem; color:#586380; font-weight:normal;">Is this the correct answer?</div><div style="margin-top:0.5rem; color:var(--text-primary); font-weight:bold;">"${displayAnswer}"</div>`;
+    }
 
     const btnTrue = document.createElement('button');
-    btnTrue.className = 'option-card'; // Reuse option styling
+    btnTrue.className = 'option-card'; 
     btnTrue.style.flex = '1';
     btnTrue.style.textAlign = 'center';
     btnTrue.textContent = "True";
@@ -284,7 +308,7 @@ function checkAnswer(userAnswer, correctAnswer, element) {
 }
 
 function endQuiz() {
-    progressBar.style.width = '100%';
+    if (progressBar) progressBar.style.width = '100%';
     document.getElementById('quiz-active').classList.add('hidden');
     document.getElementById('quiz-results').classList.remove('hidden');
     
@@ -296,21 +320,28 @@ function endQuiz() {
     
     if (percentage === 100) {
         finalText.textContent = "Perfect score! You're a master.";
-        circle.style.borderColor = "var(--success-green)";
-        circle.style.color = "var(--success-green)";
+        if(circle) {
+            circle.style.borderColor = "var(--success-green)";
+            circle.style.color = "var(--success-green)";
+        }
     } else if (percentage >= 70) {
         finalText.textContent = "Great job! You're doing well.";
-        circle.style.borderColor = "var(--primary-blue)";
-        circle.style.color = "var(--primary-blue)";
+        if(circle) {
+            circle.style.borderColor = "var(--primary-blue)";
+            circle.style.color = "var(--primary-blue)";
+        }
     } else {
         finalText.textContent = "Keep studying! You'll get there.";
-        circle.style.borderColor = "var(--accent-yellow)";
-        circle.style.color = "var(--text-primary)";
+        if(circle) {
+            circle.style.borderColor = "var(--accent-yellow)";
+            circle.style.color = "var(--text-primary)";
+        }
     }
 }
 
 // Start
 loadDeck();
+
 // Expose functions globally for HTML onclicks
 window.switchMode = switchMode;
 window.startQuiz = startQuiz;
