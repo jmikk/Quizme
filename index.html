@@ -3,31 +3,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Flashcards</title>
+    <title>OpenQuizlet</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
+    <nav>
+        <div class="nav-brand">OpenQuizlet</div>
+        <div class="nav-links">
+            <button onclick="switchMode('study')" class="active-mode" id="nav-study">Flashcards</button>
+            <button onclick="switchMode('quiz')" id="nav-quiz">Quiz</button>
+        </div>
+    </nav>
+
     <div class="container">
-        <h1>Study Time</h1>
         
-        <div class="scene">
-            <div class="card" id="flashcard">
-                <div class="card-face card-front">
-                    <p id="term-text">Loading...</p>
-                </div>
-                <div class="card-face card-back">
-                    <p id="def-text">...</p>
+        <div id="study-mode" class="mode-section">
+            <div class="scene">
+                <div class="card" id="flashcard">
+                    <div class="card-face card-front">
+                        <p id="term-text">Loading...</p>
+                    </div>
+                    <div class="card-face card-back">
+                        <p id="def-text">...</p>
+                    </div>
                 </div>
             </div>
+            <div class="controls">
+                <button id="prev-btn">←</button>
+                <span id="counter">1 / X</span>
+                <button id="next-btn">→</button>
+            </div>
+            <button id="shuffle-btn">Shuffle Deck</button>
         </div>
 
-        <div class="controls">
-            <button id="prev-btn">← Previous</button>
-            <span id="counter">1 / X</span>
-            <button id="next-btn">Next →</button>
+        <div id="quiz-setup" class="mode-section hidden">
+            <h2>Quiz Setup</h2>
+            <form id="quiz-options">
+                
+                <div class="option-group">
+                    <label>Number of Questions:</label>
+                    <input type="number" id="q-count" min="1" value="5">
+                    <span id="max-q-note">(Max: 0)</span>
+                </div>
+
+                <div class="option-group">
+                    <label>Answer With:</label>
+                    <select id="answer-with">
+                        <option value="def">Definitions (Given Term, pick Definition)</option>
+                        <option value="term">Terms (Given Definition, pick Term)</option>
+                        <option value="mixed">Mixed</option>
+                    </select>
+                </div>
+
+                <div class="option-group">
+                    <label>Question Types:</label>
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" value="multiple" checked> Multiple Choice</label>
+                        <label><input type="checkbox" value="tf" checked> True/False</label>
+                        <label><input type="checkbox" value="writing" checked> Writing</label>
+                        </div>
+                </div>
+
+                <button type="button" class="start-btn" onclick="startQuiz()">Start Quiz</button>
+            </form>
         </div>
-        <button id="shuffle-btn">Shuffle Deck</button>
+
+        <div id="quiz-active" class="mode-section hidden">
+            <div class="quiz-header">
+                <span id="quiz-progress">Question 1/10</span>
+                <span id="quiz-score">Score: 0</span>
+            </div>
+            
+            <div id="question-container">
+                </div>
+            
+            <div id="feedback" class="hidden"></div>
+            <button id="next-question-btn" class="hidden">Next Question</button>
+        </div>
+
+        <div id="quiz-results" class="mode-section hidden">
+            <h2>Quiz Complete!</h2>
+            <div class="score-circle">
+                <span id="final-score">80%</span>
+            </div>
+            <p id="final-text">Great job!</p>
+            <button onclick="switchMode('quiz')" class="start-btn">New Quiz</button>
+        </div>
+
     </div>
 
     <script src="script.js"></script>
