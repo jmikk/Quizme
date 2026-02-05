@@ -88,6 +88,13 @@ if (shuffleBtn) shuffleBtn.addEventListener('click', () => {
 });
 
 // --- QUIZ LOGIC ---
+
+// !!! MISSING LISTENER ADDED HERE !!!
+if (nextQBtn) nextQBtn.addEventListener('click', () => {
+    currentQuizIndex++;
+    showNextQuestion();
+});
+
 function startQuiz() {
     if (deck.length === 0) {
         alert("No words loaded. Please check words.json");
